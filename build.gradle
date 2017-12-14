@@ -1,6 +1,7 @@
 buildscript {
   project.ext {
     kotlinVersion = '1.1.0'
+    kotlinCoroutinesVersion = '0.19.3'
   }
   repositories {
     jcenter()

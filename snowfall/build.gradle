@@ -3,6 +3,8 @@ apply plugin: 'kotlin-android'
 
 dependencies {
   compile "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
+  compile "org.jetbrains.kotlinx:kotlinx-coroutines-core:$kotlinCoroutinesVersion"
+  compile "org.jetbrains.kotlinx:kotlinx-coroutines-android:$kotlinCoroutinesVersion"
 }
 
 android {
@@ -10,6 +12,6 @@ android {
   buildToolsVersion rootProject.ext.buildToolsVersion
 
   defaultConfig {
-    minSdkVersion 16
+    minSdkVersion 15
   }
 }

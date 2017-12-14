@@ -72,10 +72,10 @@ internal class Snowflake(val params: Params) {
     }
   }
 
-  fun update() {
+  fun update(terminate: Boolean = false) {
     positionX += speedX
     positionY += speedY
-    if (positionY > params.parentHeight) {
+    if (positionY > params.parentHeight && !terminate) {
       reset(positionY = -size.toDouble())
     }
     if (params.fadingEnabled) {

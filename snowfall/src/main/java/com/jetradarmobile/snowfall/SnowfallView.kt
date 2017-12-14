@@ -23,6 +23,11 @@ import android.os.Handler
 import android.os.HandlerThread
 import android.util.AttributeSet
 import android.view.View
+import kotlinx.coroutines.experimental.CommonPool
+import kotlinx.coroutines.experimental.CoroutineScope
+import kotlinx.coroutines.experimental.Job
+import kotlinx.coroutines.experimental.launch
+import java.lang.ref.WeakReference
 
 class SnowfallView(context: Context, attrs: AttributeSet) : View(context, attrs) {
   private val DEFAULT_SNOWFLAKES_NUM = 200
@@ -48,8 +53,11 @@ class SnowfallView(context: Context, attrs: AttributeSet) : View(context, attrs)
   private val snowflakesFadingEnabled: Boolean
   private val snowflakesAlreadyFalling: Boolean
 
-  private val updateSnowflakesThread: UpdateSnowflakesThread
   private var snowflakes: Array<Snowflake>? = null
+  private val computationTask : suspend CoroutineScope.() -> Unit
+  private var computationJob : Job? = null
+  private var isTearDown : Boolean = false
+  var terminateSnow : Boolean = false
 
   init {
     val a = context.obtainStyledAttributes(attrs, R.styleable.SnowfallView)
@@ -68,7 +76,13 @@ class SnowfallView(context: Context, attrs: AttributeSet) : View(context, attrs)
     } finally {
       a.recycle()
     }
-    updateSnowflakesThread = UpdateSnowflakesThread()
+
+    val ref = WeakReference(this)
+    computationTask = {
+      val terminateSnow = ref.get()?.terminateSnow ?: false
+      snowflakes?.forEach { it.update(terminateSnow) }
+      ref.get()?.postInvalidate()
+    }
   }
 
   private fun dpToPx(dp: Int): Int {
@@ -114,17 +128,14 @@ class SnowfallView(context: Context, attrs: AttributeSet) : View(context, attrs)
   }
 
   private fun updateSnowflakes() {
-    updateSnowflakesThread.handler.post {
-      snowflakes?.forEach { it.update() }
-      postInvalidateOnAnimation()
+    computationJob?.cancel()
+    if (!isTearDown) {
+      computationJob = launch(context = CommonPool, block = computationTask)
     }
   }
 
-  private inner class UpdateSnowflakesThread : HandlerThread("SnowflakesComputations") {
-    val handler by lazy { Handler(looper) }
-
-    init {
-      start()
-    }
+  fun tearDown() {
+    isTearDown = true
+    computationJob?.cancel()
   }
 }
